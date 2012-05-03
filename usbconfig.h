@@ -53,7 +53,7 @@ a * "B", the registers PORTB, PINB and DDRB will be used.
  * the macros usbDeviceConnect() and usbDeviceDisconnect() (see usbdrv.h).
  * This constant defines the port on which the pullup resistor is connected.
  */
-/* #define USB_CFG_PULLUP_BIT          4 */
+/* #define USB_CFG_PULLUP_BIT          2 */
 /* This constant defines the bit number in USB_CFG_PULLUP_IOPORT (defined
  * above) where the 1.5k pullup resistor is connected. See description
  * above for details.
