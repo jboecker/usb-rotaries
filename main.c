@@ -165,6 +165,23 @@ void hadUsbReset(void) { return; }
 
 static void hardwareInit(void)
 {
+return;
+	/**** SPI initialization ****/
+        volatile char IOReg;
+        // set PB4(/SS), PB5(MOSI), PB7(SCK) as output
+        DDRB    = (1<<PB4)|(1<<PB5)|(1<<PB7);
+        // enable SPI in Master Mode with SCK = CK/128
+        SPCR    = (1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<SPR0)|(1<<SPR1);
+        IOReg   = SPSR;                         // clear SPIF bit in SPSR
+        IOReg   = SPDR;
+}
+
+static uchar shiftByte() {
+	SPDR = 0x00; // shift out 8 bits (all zeroes here, nobody cares)
+		     // so 8 bits will be read back in
+        while (!(SPSR & (1<<SPIF)));
+	
+	return SPDR;
 }
 
 /* -------------------------------------------------------------------------------- */
@@ -195,13 +212,12 @@ usbRequest_t    *rq = (void *)data;
 
 /* --------- helloLcd ---------- */
 void helloLcd() {
-	lcd_init();
-	lcd_clear();
-	lcd_setcursor(0,1);
-	lcd_string("Hello");
-	lcd_setcursor(0,2);
-	lcd_string("01234567890123456789");
+lcd_init();
+lcd_clear();
+lcd_setcursor(0,1);
+lcd_data('a');
 }
+
 
 /* ------------------------------------------------------------------------- */
 /* --------------------------------- main ---------------------------------- */
@@ -210,10 +226,13 @@ void helloLcd() {
 int main(void)
 {
 
-    helloLcd();	
+    lcd_init();
+    lcd_clear();
+    lcd_string("Number out test");
+    lcd_setcursor(0,2);
+    lcd_num(25);
 
-
-uchar   i;
+    uchar   i;
     
     usbInit();
     usbDeviceDisconnect();  /* enforce re-enumeration, do this while interrupts are disabled! */

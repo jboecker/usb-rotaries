@@ -9,7 +9,7 @@
 // Hier die verwendete Taktfrequenz in Hz eintragen, wichtig!
  
 #ifndef F_CPU
-#define F_CPU 3686400
+#define F_CPU 20000000
 #endif
  
 ////////////////////////////////////////////////////////////////////////////////
@@ -17,15 +17,15 @@
 // Alle LCD Pins mssen an einem Port angeschlossen sein und die 4
 // Datenleitungen mssen auf aufeinanderfolgenden Pins liegen
  
-//  LCD DB4-DB7 <-->  PORTC Bit PD0-PD3
+//  LCD DB4-DB7 <-->  PORTD Bit PD0-PD3
 #define LCD_PORT      PORTC
 #define LCD_DDR       DDRC
 #define LCD_DB        PC0
  
-//  LCD RS      <-->  PORTC Bit PDC     (RS: 1=Data, 0=Command)
+//  LCD RS      <-->  PORTD Bit PD4     (RS: 1=Data, 0=Command)
 #define LCD_RS        PC4
  
-//  LCD EN      <-->  PORTC Bit PC5     (EN: 1-Impuls fr Daten)
+//  LCD EN      <-->  PORTD Bit PD5     (EN: 1-Impuls fr Daten)
 #define LCD_EN        PC5
  
 ////////////////////////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@
 // Die Eintrge hier sollten fr ein LCD mit einer Zeilenlnge von 16 Zeichen passen
 // Bei anderen Zeilenlngen mssen diese Eintrge angepasst werden
  
-#define LCD_DDADR_LINE1         0
+#define LCD_DDADR_LINE1         0x00
 #define LCD_DDADR_LINE2         0x40
 #define LCD_DDADR_LINE3         0x10
 #define LCD_DDADR_LINE4         0x50
@@ -77,6 +77,7 @@ void lcd_data( uint8_t data );
 ////////////////////////////////////////////////////////////////////////////////
 // Ausgabe eines Strings an der aktuellen Cursorposition 
 void lcd_string( const char *data );
+void lcd_num(uint8_t number);
  
 ////////////////////////////////////////////////////////////////////////////////
 // Definition eines benutzerdefinierten Sonderzeichens.
@@ -152,4 +153,4 @@ void lcd_command( uint8_t data );
 // Set DD RAM Address --------- 0b1xxxxxxx  (Display Data RAM)
 #define LCD_SET_DDADR           0x80
  
-#endif
+#endif 

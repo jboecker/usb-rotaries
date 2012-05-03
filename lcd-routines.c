@@ -160,6 +160,15 @@ void lcd_string( const char *data )
         lcd_data( *data++ );
 }
  
+void lcd_num(uint8_t number) {
+    char buffer[3];
+    itoa(number, buffer, 10);
+    uint8_t num_digits = strlen(buffer);
+    for (uint8_t i=0; i<(3-num_digits); i++)
+        lcd_data('0');
+    lcd_string(buffer);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Schreibt ein Zeichen in den Character Generator RAM
  
