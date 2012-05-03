@@ -17,6 +17,7 @@
 
 #include "usbdrv.h"
 #include "lcd-routines.h"
+#include "encoder.h"
 
 /* ------------------------------------------------------------------------- */
 
@@ -236,27 +237,49 @@ int main(void)
     lcd_clear();
     lcd_string("startup");
 
+	uint8_t left_counter = 0;
+	uint8_t right_counter = 0;
+	uint8_t down_counter = 0;
+	uint8_t up_counter = 0;
+	uint8_t value = 0;
+	
+	lcd_clear();
+	lcd_home();
+	lcd_string("<-  ->  Dn  Up");
+	
+	uint8_t oldstate = 0x01;
+	uint8_t newstate = 0x01;
+	uint8_t events = 0;
+
+    wdt_enable(WDTO_2S);
     for(;;){ // ignore USB
-		static uchar loop_counter = 0;
+		wdt_reset();
+		
 		parallelIn();
-		uint8_t data = readByteSpi();
-		lcd_home();
-		lcd_string("    01234567");		
+		oldstate = newstate;
+		newstate = readByteSpi();
+		events = encoder_events(oldstate, newstate);
+
+		
+		if ((events & ECEV_LEFT) > 0)	{left_counter++; value--; }
+		if ((events & ECEV_RIGHT) > 0) {right_counter++; value++; }
+		if ((events & ECEV_BUTTON_DOWN) > 0) down_counter++;
+		if ((events & ECEV_BUTTON_UP) > 0) up_counter++;
+		
+		
 		lcd_setcursor(0,2);
-		lcd_num(loop_counter);
+		lcd_num(left_counter);
 		lcd_data(' ');
-		
-		for (uint8_t i=0; i<8; i++) {
-			lcd_bit(data & 128);
-			data <<= 1;
-		}
-		
-		loop_counter++;
+		lcd_num(right_counter);
+		lcd_data(' ');
+		lcd_num(down_counter);
+		lcd_data(' ');
+		lcd_num(up_counter);
+		lcd_data(' ');
+		lcd_num(value);
 
      }
-
-
-
+	return 0;
 
     uchar   i;
     
@@ -269,7 +292,7 @@ int main(void)
     }
     usbDeviceConnect();
 
-//    wdt_enable(WDTO_2S);
+    wdt_enable(WDTO_2S);
 
     hardwareInit();
 

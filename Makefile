@@ -15,7 +15,7 @@ UISP = uisp -dprog=avr910 -dserial=$(SERIAL) -dpart=auto
 
 COMPILE = avr-gcc -std=c99 -Wall -Os -Iusbdrv -I. -mmcu=atmega48
 
-OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o lcd-routines.o main.o
+OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o lcd-routines.o encoder.o main.o
 
 flash: all
 	sudo avrdude -p m48 -P usb -c avrispmkII -B 22 -U flash:w:main.hex:a
