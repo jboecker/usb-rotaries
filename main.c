@@ -245,6 +245,18 @@ void parallelIn() {
 
 }
 
+uint8_t readByteBitbang() {
+
+	parallelIn();
+	uint8_t data = 0x00;
+	for (uint8_t i=0; i<8; i++) {
+		data <<= 1;
+		data |= readBit();
+		clock();
+	}
+	return data;
+}
+
 int main(void)
 {
 
@@ -261,20 +273,19 @@ int main(void)
 	
     for(;;){ // ignore USB
 		static uchar loop_counter = 0;
-		if (loop_counter %  8== 0) {
-			parallelIn();
-			lcd_home();
-			lcd_string("    01234567");
-			lcd_setcursor(0,2);
-			lcd_num(loop_counter);
-			lcd_data(' ');
+		uint8_t data = readByteBitbang();
+		lcd_home();
+		lcd_string("    01234567");		
+		lcd_setcursor(0,2);
+		lcd_num(loop_counter);
+		lcd_data(' ');
+		
+		for (uint8_t i=0; i<8; i++) {
+			lcd_bit(data & 128);
+			data <<= 1;
 		}
+		
 		loop_counter++;
-
-		static uchar data = 0x00;
-
-		lcd_bit( readBit() );
-		clock();
 
      }
 
