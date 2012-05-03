@@ -16,7 +16,7 @@
 #include <stdlib.h>
 
 #include "usbdrv.h"
-
+#include "lcd-routines.h"
 
 /* ------------------------------------------------------------------------- */
 
@@ -165,23 +165,27 @@ void hadUsbReset(void) { return; }
 
 static void hardwareInit(void)
 {
-return;
 	/**** SPI initialization ****/
         volatile char IOReg;
-        // set PB4(/SS), PB5(MOSI), PB7(SCK) as output
-        DDRB    = (1<<PB4)|(1<<PB5)|(1<<PB7);
+        // set PB2(/SS), PB3(MOSI), PB5(SCK) as output
+        DDRB    = (1<<PB2)|(1<<PB3)|(1<<PB5);
         // enable SPI in Master Mode with SCK = CK/128
         SPCR    = (1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<SPR0)|(1<<SPR1);
         IOReg   = SPSR;                         // clear SPIF bit in SPSR
         IOReg   = SPDR;
 }
 
-static uchar shiftByte() {
+static uchar spiReadByte() {
 	SPDR = 0x00; // shift out 8 bits (all zeroes here, nobody cares)
 		     // so 8 bits will be read back in
         while (!(SPSR & (1<<SPIF)));
 	
-	return SPDR;
+	uchar ret = SPDR;
+
+        volatile char IOReg;
+        IOReg   = SPSR;                         // clear SPIF bit in SPSR
+        IOReg   = SPDR;
+	return ret;
 }
 
 /* -------------------------------------------------------------------------------- */
@@ -210,27 +214,72 @@ usbRequest_t    *rq = (void *)data;
 	return 0;
 }
 
-/* --------- helloLcd ---------- */
-void helloLcd() {
-lcd_init();
-lcd_clear();
-lcd_setcursor(0,1);
-lcd_data('a');
-}
-
-
 /* ------------------------------------------------------------------------- */
 /* --------------------------------- main ---------------------------------- */
 /* ------------------------------------------------------------------------- */
+
+uchar readBit() {
+	if (PINB & (1<<PB4)) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+void clock() {
+	PORTB &= ~(1<<PB5);
+	_delay_us(10);
+	PORTB |= (1<<PB5);
+	_delay_us(10);
+	PORTB &= ~(1<<PB5);
+	_delay_us(10);
+}
+
+void parallelIn() {
+
+	PORTB |= (1<<PB2); // set PARALLEL INPUT
+	_delay_us(10);
+
+	PORTB &= ~(1<<PB2); // clear PARALLEL INPUT
+	_delay_us(10);
+
+}
 
 int main(void)
 {
 
     lcd_init();
     lcd_clear();
-    lcd_string("Number out test");
-    lcd_setcursor(0,2);
-    lcd_num(25);
+    lcd_string("startup");
+
+	DDRB = (1<<PB2) | (1<<PB3) | (1<<PB5);
+	PORTB = 0x00; // Pull-Ups aus
+	PORTB &= ~(1<<PB2); // clear PARALLEL INPUT
+	_delay_ms(20);
+
+	parallelIn();
+	
+    for(;;){ // ignore USB
+		static uchar loop_counter = 0;
+		if (loop_counter %  8== 0) {
+			parallelIn();
+			lcd_home();
+			lcd_string("    01234567");
+			lcd_setcursor(0,2);
+			lcd_num(loop_counter);
+			lcd_data(' ');
+		}
+		loop_counter++;
+
+		static uchar data = 0x00;
+
+		lcd_bit( readBit() );
+		clock();
+
+     }
+
+
+
 
     uchar   i;
     
@@ -243,11 +292,13 @@ int main(void)
     }
     usbDeviceConnect();
 
-    wdt_enable(WDTO_2S);
+//    wdt_enable(WDTO_2S);
 
     hardwareInit();
 
     sei();
+
+
 
     for(;;){    /* main event loop */
         wdt_reset();
