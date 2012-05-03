@@ -161,7 +161,7 @@ void lcd_string( const char *data )
 }
  
 void lcd_num(uint8_t number) {
-    char buffer[3];
+    char buffer[4];
     itoa(number, buffer, 10);
     uint8_t num_digits = strlen(buffer);
     for (uint8_t i=0; i<(3-num_digits); i++)
