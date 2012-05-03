@@ -166,8 +166,11 @@ void hadUsbReset(void) { return; }
 static void hardwareInit(void)
 {
 	/**** SPI initialization ****/
-        // set PB2(/SS), PB3(MOSI), PB5(SCK) as output
-        DDRB    = (1<<PB2)|(1<<PB3)|(1<<PB5);
+	// set PB2(/SS), PB3(MOSI), PB5(SCK) as output
+	DDRB    = (1<<PB2)|(1<<PB3)|(1<<PB5);
+	PORTB &= ~((1<<PB4)); // make sure MISO pull-up is disabled
+	PORTB &= ~(1<<PB2); // clear PARALLEL INPUT
+
 }
 
 static uint8_t readByteSpi() {
@@ -227,14 +230,11 @@ void parallelIn() {
 int main(void)
 {
 
+	hardwareInit();
+	
     lcd_init();
     lcd_clear();
     lcd_string("startup");
-
-	DDRB = (1<<PB2) | (1<<PB3) | (1<<PB5);
-	PORTB = 0x00; // Pull-Ups aus
-	PORTB &= ~(1<<PB2); // clear PARALLEL INPUT
-	_delay_ms(20);
 
     for(;;){ // ignore USB
 		static uchar loop_counter = 0;
