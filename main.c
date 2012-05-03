@@ -214,23 +214,6 @@ usbRequest_t    *rq = (void *)data;
 /* --------------------------------- main ---------------------------------- */
 /* ------------------------------------------------------------------------- */
 
-uchar readBit() {
-	if (PINB & (1<<PB4)) {
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
-void clock() {
-	PORTB &= ~(1<<PB5);
-	_delay_us(10);
-	PORTB |= (1<<PB5);
-	_delay_us(10);
-	PORTB &= ~(1<<PB5);
-	_delay_us(10);
-}
-
 void parallelIn() {
 
 	PORTB |= (1<<PB2); // set PARALLEL INPUT
@@ -239,16 +222,6 @@ void parallelIn() {
 	PORTB &= ~(1<<PB2); // clear PARALLEL INPUT
 	_delay_us(10);
 
-}
-
-uint8_t readByteBitbang() {
-	uint8_t data = 0x00;
-	for (uint8_t i=0; i<8; i++) {
-		data <<= 1;
-		data |= readBit();
-		clock();
-	}
-	return data;
 }
 
 int main(void)
