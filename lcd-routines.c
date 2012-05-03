@@ -169,6 +169,13 @@ void lcd_num(uint8_t number) {
     lcd_string(buffer);
 }
 
+void lcd_bit(uint8_t expr) {
+	if (expr)
+		lcd_data('1');
+	else
+		lcd_data('0');
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Schreibt ein Zeichen in den Character Generator RAM
  

@@ -78,6 +78,7 @@ void lcd_data( uint8_t data );
 // Ausgabe eines Strings an der aktuellen Cursorposition 
 void lcd_string( const char *data );
 void lcd_num(uint8_t number);
+void lcd_bit(uint8_t truth);
  
 ////////////////////////////////////////////////////////////////////////////////
 // Definition eines benutzerdefinierten Sonderzeichens.
