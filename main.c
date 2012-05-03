@@ -166,26 +166,22 @@ void hadUsbReset(void) { return; }
 static void hardwareInit(void)
 {
 	/**** SPI initialization ****/
-        volatile char IOReg;
         // set PB2(/SS), PB3(MOSI), PB5(SCK) as output
         DDRB    = (1<<PB2)|(1<<PB3)|(1<<PB5);
-        // enable SPI in Master Mode with SCK = CK/128
-        SPCR    = (1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<SPR0)|(1<<SPR1);
-        IOReg   = SPSR;                         // clear SPIF bit in SPSR
-        IOReg   = SPDR;
 }
 
-static uchar spiReadByte() {
+static uint8_t readByteSpi() {
+	// enable SPI in Master Mode with SCK = CK/128
+	SPCR    = (1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<SPR0)|(1<<SPR1);
+	volatile char IOReg;
+	IOReg   = SPSR;                         // clear SPIF bit in SPSR
+	IOReg   = SPDR;
+
 	SPDR = 0x00; // shift out 8 bits (all zeroes here, nobody cares)
 		     // so 8 bits will be read back in
         while (!(SPSR & (1<<SPIF)));
 	
-	uchar ret = SPDR;
-
-        volatile char IOReg;
-        IOReg   = SPSR;                         // clear SPIF bit in SPSR
-        IOReg   = SPDR;
-	return ret;
+	return SPDR;
 }
 
 /* -------------------------------------------------------------------------------- */
@@ -246,8 +242,6 @@ void parallelIn() {
 }
 
 uint8_t readByteBitbang() {
-
-	parallelIn();
 	uint8_t data = 0x00;
 	for (uint8_t i=0; i<8; i++) {
 		data <<= 1;
@@ -269,11 +263,10 @@ int main(void)
 	PORTB &= ~(1<<PB2); // clear PARALLEL INPUT
 	_delay_ms(20);
 
-	parallelIn();
-	
     for(;;){ // ignore USB
 		static uchar loop_counter = 0;
-		uint8_t data = readByteBitbang();
+		parallelIn();
+		uint8_t data = readByteSpi();
 		lcd_home();
 		lcd_string("    01234567");		
 		lcd_setcursor(0,2);
