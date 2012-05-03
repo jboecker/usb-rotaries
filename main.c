@@ -21,7 +21,7 @@
 
 /* ------------------------------------------------------------------------- */
 
-static uchar    reportBuffer[1] = {0};    /* buffer for HID reports */
+static uchar    reportBuffer[4] = {0,0,0,0};    /* buffer for HID reports */
 
 PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
@@ -29,12 +29,13 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
     0xa1, 0x01,                    // COLLECTION (Application)
     0x05, 0x09,                    //   USAGE_PAGE (Button)
     0x19, 0x01,                    //   USAGE_MINIMUM (Button 1)
-    0x29, 0x08,                    //   USAGE_MAXIMUM (Button 8)
+    0x29, 0x20,                    //   USAGE_MAXIMUM (Button 32)
     0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
     0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
     0x75, 0x01,                    //   REPORT_SIZE (1)
-    0x95, 0x08,                    //   REPORT_COUNT (8)
+    0x95, 0x20,                    //   REPORT_COUNT (32)
     0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+
     0xc0                           //     END_COLLECTION
 };
 
