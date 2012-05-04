@@ -21,7 +21,7 @@
 
 /* ------------------------------------------------------------------------- */
 
-static uchar    reportBuffer[3] = {1,0};    /* buffer for HID reports */
+static uchar    reportBuffer[2] = {1,0};    /* buffer for HID reports */
 
 PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
@@ -39,9 +39,6 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
 
 static uchar    idleRate;           /* in 4 ms units */
 static uchar    newReport = 0;		/* current report */
-
-static uchar buttonState[5] = {3,3,3,3,3};
-static uchar buttonChanged[5];
 
 static uchar	debounceTimeIsOver = 1;	/* for switch debouncing */
 
@@ -154,25 +151,44 @@ uchar   i;
 
     hardwareInit();
 	
-
+	lcd_init();
+	
+	
     sei();
 
+	
+	uint8_t val1 = 0;
+	uint8_t val2 = 0;
+	uint8_t oldstate = 0x00;
+	uint8_t newstate;
+	uint8_t events;
     for(;;){    /* main event loop */
 		
 		/* */
 		parallelIn();
-		uint8_t byte = readByteSpi();
-		if ((byte & 0b00000001) == 0) { reportBuffer[1] |= 1; } else { reportBuffer[0] &= ~1; }
-		if ((byte & 0b00001000) == 0) { reportBuffer[1] |= 2; } else { reportBuffer[0] &= ~2; }
-		  /* */
+		newstate = readByteSpi();
+		events = encoder_events(oldstate, newstate);
+		if (events & ECEV_LEFT) val1--;
+		if (events & ECEV_RIGHT) val1++;
+	
+		events = encoder_events((oldstate >> 3), (newstate >> 3));
+		if (events & ECEV_LEFT) val2--;
+		if (events & ECEV_RIGHT) val2++;		
+
+		oldstate=newstate;
+		
+		reportBuffer[1] = val1;
+		/* */
 		reportBuffer[0]=1;
+	
+		lcd_home();
+		lcd_num(val1); lcd_data(' '); lcd_num(val2);
 		
         wdt_reset();
         usbPoll();
-		if (debounceTimeIsOver == 1){
-			//			checkButtonChange();
-		}
 
+		
+		newReport = 0;
 		if(usbInterruptIsReady() && newReport == 0){ /* we can send another report */
         	buildReport();
            	usbSetInterrupt(reportBuffer, sizeof(reportBuffer));
