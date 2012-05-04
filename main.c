@@ -21,22 +21,20 @@
 
 /* ------------------------------------------------------------------------- */
 
-static uchar    reportBuffer[4] = {0,0,0,0};    /* buffer for HID reports */
+static uchar    reportBuffer[3] = {1,0};    /* buffer for HID reports */
 
 PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-    0x09, 0x05,                    // USAGE (Game Pad)
+    0x09, 0x04,                    // USAGE (Joystick)
     0xa1, 0x01,                    // COLLECTION (Application)
-    0x05, 0x09,                    //   USAGE_PAGE (Button)
-    0x19, 0x01,                    //   USAGE_MINIMUM (Button 1)
-    0x29, 0x20,                    //   USAGE_MAXIMUM (Button 32)
-    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-    0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
-    0x75, 0x01,                    //   REPORT_SIZE (1)
-    0x95, 0x20,                    //   REPORT_COUNT (32)
-    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
-
-    0xc0                           //     END_COLLECTION
+    0x85, 0x01,                    //   REPORT_ID (1)
+    0x09, 0x30,                    //   USAGE (X)
+    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+    0x46, 0xff, 0x00,              //   PHYSICAL_MAXIMUM (255)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x95, 0x01,                    //   REPORT_COUNT (1)
+    0x81, 0x02,                    // INPUT (Data,Var,Abs)
+    0xc0                           // END_COLLECTION
 };
 
 static uchar    idleRate;           /* in 4 ms units */
@@ -164,9 +162,10 @@ uchar   i;
 		/* */
 		parallelIn();
 		uint8_t byte = readByteSpi();
-		if ((byte & 0b00000001) == 0) { reportBuffer[0] |= 1; } else { reportBuffer[0] &= ~1; }
-		if ((byte & 0b00001000) == 0) { reportBuffer[0] |= 2; } else { reportBuffer[0] &= ~2; }
+		if ((byte & 0b00000001) == 0) { reportBuffer[1] |= 1; } else { reportBuffer[0] &= ~1; }
+		if ((byte & 0b00001000) == 0) { reportBuffer[1] |= 2; } else { reportBuffer[0] &= ~2; }
 		  /* */
+		reportBuffer[0]=1;
 		
         wdt_reset();
         usbPoll();
