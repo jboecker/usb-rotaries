@@ -214,7 +214,7 @@ uchar   i;
 		if (events & ECEV_BUTTON_UP) reportBuffer1[4] &= ~1;
 	
 		events = encoder_events((oldstate >> 3), (newstate >> 3));
-		if (events & ECEV_LEFT) { currentAxis--; if (currentAxis < 0) currentAxis = 8; }
+		if (events & ECEV_LEFT) { currentAxis--; if (currentAxis == 255) currentAxis = 8; }
 		if (events & ECEV_RIGHT) { currentAxis++; if (currentAxis > 8) currentAxis = 0; }
 		if (events & ECEV_BUTTON_DOWN) reportBuffer1[4] |= 2;
 		if (events & ECEV_BUTTON_UP) reportBuffer1[4] &= ~2;
