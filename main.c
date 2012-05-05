@@ -21,9 +21,9 @@
 
 /* ------------------------------------------------------------------------- */
 
-static uchar    reportBuffer[3] = {1,0,0};    /* buffer for HID reports */
+static uchar    reportBuffer[5] = {1,0,0,0,0};    /* buffer for HID reports */
 
-PROGMEM const char usbHidReportDescriptor[31] = {
+PROGMEM const char usbHidReportDescriptor[47] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
     0x09, 0x04,                    // USAGE (Joystick)
     0xa1, 0x01,                    // COLLECTION (Application)
@@ -38,6 +38,14 @@ PROGMEM const char usbHidReportDescriptor[31] = {
     0x75, 0x08,                    //   REPORT_SIZE (8)
     0x05, 0x01,                    //   REPORT_COUNT (1)
     0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+    0x05, 0x09,                    // USAGE_PAGE (Button)
+    0x19, 0x01,                    // USAGE_MINIMUM (Button 1)
+    0x29, 0x10,                    // USAGE_MAXIMUM (Button 16)
+    0x15, 0x00,                    // LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    // LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                    // REPORT_SIZE (1)
+    0x95, 0x10,                     // REPORT_COUNT (16)
+    0x81, 0x02,                    // INPUT (Data,Var,Abs)
     0xc0                           // END_COLLECTION
 };
 
@@ -174,11 +182,15 @@ uchar   i;
 		events = encoder_events(oldstate, newstate);
 		if (events & ECEV_LEFT) val1--;
 		if (events & ECEV_RIGHT) val1++;
+		if (events & ECEV_BUTTON_DOWN) reportBuffer[3] |= 128;
+		if (events & ECEV_BUTTON_UP) reportBuffer[3] &= ~128;
 	
 		events = encoder_events((oldstate >> 3), (newstate >> 3));
 		if (events & ECEV_LEFT) val2--;
 		if (events & ECEV_RIGHT) val2++;		
-
+		if (events & ECEV_BUTTON_DOWN) reportBuffer[3] |= 64;
+		if (events & ECEV_BUTTON_UP) reportBuffer[3] &= ~64;
+	
 		oldstate=newstate;
 		
 		reportBuffer[1] = val1;
