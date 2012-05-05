@@ -14,6 +14,7 @@
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "usbdrv.h"
 #include "lcd-routines.h"
@@ -21,23 +22,23 @@
 
 /* ------------------------------------------------------------------------- */
 
-static uchar    reportBuffer[5] = {1,0,0,0,0};    /* buffer for HID reports */
+static uchar    reportBuffer1[6] = {1,0,0,0,0,0};
+static uchar    reportBuffer2[7] = {2,0,0,0,0,0,0};
 
-PROGMEM const char usbHidReportDescriptor[47] = {
+PROGMEM const char usbHidReportDescriptor[71] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
     0x09, 0x04,                    // USAGE (Joystick)
     0xa1, 0x01,                    // COLLECTION (Application)
     0x85, 0x01,                    //   REPORT_ID (1)
     0x09, 0x30,                    //   USAGE (X)
+    0x09, 0x31,                    //   USAGE (Y)
+    0x09, 0x32,                    //   USAGE (Z)
     0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
     0x46, 0xff, 0x00,              //   PHYSICAL_MAXIMUM (255)
     0x75, 0x08,                    //   REPORT_SIZE (8)
-    0x95, 0x01,                    //   REPORT_COUNT (1)
+    0x95, 0x03,                    //   REPORT_COUNT (3)
     0x81, 0x02,                    // INPUT (Data,Var,Abs)
-    0x09, 0x31,                    //   USAGE (Y)
-    0x75, 0x08,                    //   REPORT_SIZE (8)
-    0x05, 0x01,                    //   REPORT_COUNT (1)
-    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+
     0x05, 0x09,                    // USAGE_PAGE (Button)
     0x19, 0x01,                    // USAGE_MINIMUM (Button 1)
     0x29, 0x10,                    // USAGE_MAXIMUM (Button 16)
@@ -46,30 +47,53 @@ PROGMEM const char usbHidReportDescriptor[47] = {
     0x75, 0x01,                    // REPORT_SIZE (1)
     0x95, 0x10,                     // REPORT_COUNT (16)
     0x81, 0x02,                    // INPUT (Data,Var,Abs)
+	
+    0x85, 0x02,                    //   REPORT_ID (2)
+    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
+	0x09, 0x33,                    //   USAGE (Rx)
+    0x09, 0x34,                    //   USAGE (Ry)
+    0x09, 0x35,                    //   USAGE (Rz)
+    0x09, 0x36,                    //   USAGE (Slider)
+    0x09, 0x37,                    //   USAGE (Dial)
+    0x09, 0x38,                    //   USAGE (Wheel)
+    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+    0x46, 0xff, 0x00,              //   PHYSICAL_MAXIMUM (255)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x95, 0x06,                    //   REPORT_COUNT (6)
+    0x81, 0x02,                    // INPUT (Data,Var,Abs)
+
     0xc0                           // END_COLLECTION
 };
 
 static uchar    idleRate;           /* in 4 ms units */
 static uchar    newReport = 0;		/* current report */
 
-static uchar	debounceTimeIsOver = 1;	/* for switch debouncing */
 
 
 /* ------------------------------------------------------------------------- */
-
-void buildReport() {
-
-}
  
 static void timerPoll(void)
 {
 	static unsigned int timerCnt;
+	static char text[] = {'W','a','s',' ','w','a','e','r','e',' ','e','i','n',' ','L','C','D',' ','o','h','n','e',' ','L','a','u','f','s','c','h','r','i','f','t','?',' ','+','+','+',' '};
+	static uint8_t startoffset = 0;
 
 	if (TIFR0 & (1<<TOV0)){ /* 22 ms timer */
 		TIFR0 = 1<<TOV0;  /* clear overflow */
-		if (++timerCnt >= 6){
+		if (++timerCnt >= 12){
 			timerCnt = 0;
-			debounceTimeIsOver = 1;
+			lcd_setcursor(0,2);
+			
+			char* pos = text + startoffset;
+			for (uint8_t i=0; i<20; i++) {
+				lcd_data(*pos);
+				pos++;
+				if (*pos == '\0')
+					pos = text;
+			}
+
+			startoffset++;
+			if (startoffset >= sizeof(text)) startoffset = 0;
 		}
 	}
 }
@@ -114,12 +138,16 @@ uchar	usbFunctionSetup(uchar data[8])
 {
 usbRequest_t    *rq = (void *)data;
 
-    usbMsgPtr = reportBuffer;
+    usbMsgPtr = NULL;
     if((rq->bmRequestType & USBRQ_TYPE_MASK) == USBRQ_TYPE_CLASS){    /* class request type */
         if(rq->bRequest == USBRQ_HID_GET_REPORT){  /* wValue: ReportType (highbyte), ReportID (lowbyte) */
-            /* we only have one report type, so don't look at wValue */
-		    buildReport();
-            return sizeof(reportBuffer);
+			if (rq->wValue.bytes[1] == 1) { // look at the ReportID
+				usbMsgPtr = reportBuffer1;
+				return sizeof(reportBuffer1);
+			} else {
+				usbMsgPtr = reportBuffer2;
+				return sizeof(reportBuffer2);
+			}
         }else if(rq->bRequest == USBRQ_HID_GET_IDLE){
             usbMsgPtr = &idleRate;
             return 1;
@@ -169,8 +197,8 @@ uchar   i;
     sei();
 
 	
-	uint8_t val1 = 0;
-	uint8_t val2 = 0;
+	uint8_t axisValues[9] = {0,0,0,0,0,0,0,0,0};
+	uint8_t currentAxis = 0;
 	uint8_t oldstate = 0x00;
 	uint8_t newstate;
 	uint8_t events;
@@ -180,35 +208,47 @@ uchar   i;
 		parallelIn();
 		newstate = readByteSpi();
 		events = encoder_events(oldstate, newstate);
-		if (events & ECEV_LEFT) val1--;
-		if (events & ECEV_RIGHT) val1++;
-		if (events & ECEV_BUTTON_DOWN) reportBuffer[3] |= 128;
-		if (events & ECEV_BUTTON_UP) reportBuffer[3] &= ~128;
+		if (events & ECEV_LEFT) axisValues[currentAxis]--;
+		if (events & ECEV_RIGHT) axisValues[currentAxis]++;
+		if (events & ECEV_BUTTON_DOWN) reportBuffer1[4] |= 1;
+		if (events & ECEV_BUTTON_UP) reportBuffer1[4] &= ~1;
 	
 		events = encoder_events((oldstate >> 3), (newstate >> 3));
-		if (events & ECEV_LEFT) val2--;
-		if (events & ECEV_RIGHT) val2++;		
-		if (events & ECEV_BUTTON_DOWN) reportBuffer[3] |= 64;
-		if (events & ECEV_BUTTON_UP) reportBuffer[3] &= ~64;
+		if (events & ECEV_LEFT) { currentAxis--; if (currentAxis < 0) currentAxis = 8; }
+		if (events & ECEV_RIGHT) { currentAxis++; if (currentAxis > 8) currentAxis = 0; }
+		if (events & ECEV_BUTTON_DOWN) reportBuffer1[4] |= 2;
+		if (events & ECEV_BUTTON_UP) reportBuffer1[4] &= ~2;
 	
 		oldstate=newstate;
 		
-		reportBuffer[1] = val1;
-        reportBuffer[2] = val2;
-		/* */
-		reportBuffer[0]=1;
-	
+		reportBuffer1[1] = axisValues[0];
+        reportBuffer1[2] = axisValues[1];
+		reportBuffer1[3] = axisValues[2];
+		
+		reportBuffer2[1] = axisValues[3];
+		reportBuffer2[2] = axisValues[4];
+		reportBuffer2[3] = axisValues[5];
+		reportBuffer2[4] = axisValues[6];
+		reportBuffer2[5] = axisValues[7];
+		reportBuffer2[6] = axisValues[8];
+		
+   
 		lcd_home();
-		lcd_num(val1); lcd_data(' '); lcd_num(val2);
+		lcd_num(currentAxis); lcd_data(' '); lcd_num(axisValues[currentAxis]);
 		
         wdt_reset();
         usbPoll();
 
 		
 		newReport = 0;
+		static uchar reportNumber = 1;
+		reportNumber++; if (reportNumber == 3) reportNumber = 1;
 		if(usbInterruptIsReady() && newReport == 0){ /* we can send another report */
-        	buildReport();
-           	usbSetInterrupt(reportBuffer, sizeof(reportBuffer));
+			if (reportNumber == 1)
+				usbSetInterrupt(reportBuffer1, sizeof(reportBuffer1));
+			else
+				usbSetInterrupt(reportBuffer2, sizeof(reportBuffer2));
+					
         	}
         
 		timerPoll();
