@@ -75,7 +75,7 @@ static uchar    newReport = 0;		/* current report */
 static void timerPoll(void)
 {
 	static unsigned int timerCnt;
-	static char text[] = {'W','a','s',' ','w','a','e','r','e',' ','e','i','n',' ','L','C','D',' ','o','h','n','e',' ','L','a','u','f','s','c','h','r','i','f','t','?',' ','+','+','+',' '};
+	static char text[] = {'W','a','s',' ','w','a','e','r','e',' ','e','i','n',' ','L','C','D',' ','o','h','n','e',' ','L','a','u','f','s','c','h','r','i','f','t','?',' ','+','+','+',' ','\0'};
 	static uint8_t startoffset = 0;
 
 	if (TIFR0 & (1<<TOV0)){ /* 22 ms timer */
