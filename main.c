@@ -21,9 +21,9 @@
 
 /* ------------------------------------------------------------------------- */
 
-static uchar    reportBuffer[2] = {1,0};    /* buffer for HID reports */
+static uchar    reportBuffer[3] = {1,0,0};    /* buffer for HID reports */
 
-PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] = {
+PROGMEM const char usbHidReportDescriptor[31] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
     0x09, 0x04,                    // USAGE (Joystick)
     0xa1, 0x01,                    // COLLECTION (Application)
@@ -34,6 +34,10 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
     0x75, 0x08,                    //   REPORT_SIZE (8)
     0x95, 0x01,                    //   REPORT_COUNT (1)
     0x81, 0x02,                    // INPUT (Data,Var,Abs)
+    0x09, 0x31,                    //   USAGE (Y)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x05, 0x01,                    //   REPORT_COUNT (1)
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
     0xc0                           // END_COLLECTION
 };
 
@@ -178,6 +182,7 @@ uchar   i;
 		oldstate=newstate;
 		
 		reportBuffer[1] = val1;
+        reportBuffer[2] = val2;
 		/* */
 		reportBuffer[0]=1;
 	
