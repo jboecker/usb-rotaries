@@ -192,7 +192,43 @@ uchar   i;
     hardwareInit();
 	
 	lcd_init();
-	
+	lcd_clear();
+	PROGMEM const uint8_t chardata_switch_up[8] = {
+		0b00011111,
+		0b00011011,
+		0b00010001,
+		0b00011111,
+		0b00000000,
+		0b00000000,
+		0b00000000,
+		0b00000000
+	};
+    lcd_generatechar(LCD_GC_CHAR0, chardata_switch_up);
+	PROGMEM const uint8_t chardata_switch_down[8] = {
+		0b00000000,
+		0b00000000,
+		0b00011111,
+		0b00010001,
+		0b00010001,
+		0b00011111,
+		0b00000000,
+		0b00000000
+	};
+	lcd_generatechar(LCD_GC_CHAR1, chardata_switch_down);
+	PROGMEM const uint8_t chardata_switch_mid[8] = {
+		0b00000000,
+		0b00000000,
+		0b00000000,
+		0b00000000,
+		0b00011111,
+		0b00010001,
+		0b00011011,
+		0b00011111
+	};
+	lcd_generatechar(LCD_GC_CHAR2, chardata_switch_mid);
+
+	lcd_clear();
+	lcd_home();
 	
     sei();
 
@@ -235,6 +271,7 @@ uchar   i;
    
 		lcd_home();
 		lcd_num(currentAxis); lcd_data(' '); lcd_num(axisValues[currentAxis]);
+		lcd_data(' '); lcd_data(0); lcd_data(1); lcd_data(2);
 		
         wdt_reset();
         usbPoll();
