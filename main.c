@@ -44,6 +44,10 @@ static uchar	debounceTimeIsOver = 1;	/* for switch debouncing */
 
 
 /* ------------------------------------------------------------------------- */
+
+void buildReport() {
+
+}
  
 static void timerPoll(void)
 {
@@ -127,10 +131,6 @@ void parallelIn() {
 
 	PORTB &= ~(1<<PB2); // clear PARALLEL INPUT
 	_delay_us(1);
-
-}
-
-void buildReport() {
 
 }
 
