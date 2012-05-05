@@ -227,8 +227,8 @@ extern void hadUsbReset(void);
 #define USB_CFG_DEVICE_VERSION  0x00, 0x01
 /* Version number of the device: Minor number first, then major number.
  */
-#define USB_CFG_VENDOR_NAME     'j', 'b', 'o', 'c', 'k', 'e', 'r', '.', 'd', 'e'
-#define USB_CFG_VENDOR_NAME_LEN 10
+#define USB_CFG_VENDOR_NAME     'j', 'b', 'o', 'e', 'c', 'k', 'e', 'r', '.', 'd', 'e'
+#define USB_CFG_VENDOR_NAME_LEN 11
 /* These two values define the vendor name returned by the USB device. The name
  * must be given as a list of characters under single quotes. The characters
  * are interpreted as Unicode (UTF-16) entities.
