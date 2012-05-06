@@ -3,10 +3,13 @@
 // http://www.mikrocontroller.net/articles/AVR-GCC-Tutorial/LCD-Ansteuerung
 //
 // Die Pinbelegung ist ber defines in lcd-routines.h einstellbar
- 
+
+#include <stdlib.h> 
 #include <avr/io.h>
 #include "lcd-routines.h"
+#include <string.h>
 #include <util/delay.h>
+
  
 ////////////////////////////////////////////////////////////////////////////////
 // Erzeugt einen Enable-Puls
