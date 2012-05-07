@@ -206,36 +206,32 @@ uchar   i;
 		
 		/* */
 		parallelIn();
-		newstate = readByteSpi();
-		events = encoder_events(oldstate, newstate);
-		if (events & ECEV_LEFT) axisValues[currentAxis]--;
-		if (events & ECEV_RIGHT) axisValues[currentAxis]++;
-		if (events & ECEV_BUTTON_DOWN) reportBuffer1[4] |= 1;
-		if (events & ECEV_BUTTON_UP) reportBuffer1[4] &= ~1;
-	
-		events = encoder_events((oldstate >> 3), (newstate >> 3));
-		if (events & ECEV_LEFT) { currentAxis--; if (currentAxis < 0) currentAxis = 8; }
-		if (events & ECEV_RIGHT) { currentAxis++; if (currentAxis > 8) currentAxis = 0; }
-		if (events & ECEV_BUTTON_DOWN) reportBuffer1[4] |= 2;
-		if (events & ECEV_BUTTON_UP) reportBuffer1[4] &= ~2;
-	
-		oldstate=newstate;
-		
-		reportBuffer1[1] = axisValues[0];
-        reportBuffer1[2] = axisValues[1];
-		reportBuffer1[3] = axisValues[2];
-		
-		reportBuffer2[1] = axisValues[3];
-		reportBuffer2[2] = axisValues[4];
-		reportBuffer2[3] = axisValues[5];
-		reportBuffer2[4] = axisValues[6];
-		reportBuffer2[5] = axisValues[7];
-		reportBuffer2[6] = axisValues[8];
-		
-   
 		lcd_home();
-		lcd_num(currentAxis); lcd_data(' '); lcd_num(axisValues[currentAxis]);
-		
+
+		newstate = readByteSpi();
+		for (uint8_t i =0; i < 8; i++) {
+			lcd_bit(newstate & 0b00000001);
+			newstate >>= 1;
+		}
+		newstate = readByteSpi();
+		for (uint8_t i =0; i < 8; i++) {
+			lcd_bit(newstate & 0b00000001);
+			newstate >>= 1;
+		}
+
+		lcd_setcursor(0,2);
+		newstate = readByteSpi();
+		for (uint8_t i =0; i < 8; i++) {
+			lcd_bit(newstate & 0b00000001);
+			newstate >>= 1;
+		}
+		newstate = readByteSpi();
+		for (uint8_t i =0; i < 8; i++) {
+			lcd_bit(newstate & 0b00000001);
+			newstate >>= 1;
+		}
+
+
         wdt_reset();
         usbPoll();
 
