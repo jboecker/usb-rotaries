@@ -1,7 +1,27 @@
 // Ansteuerung eines HD44780 kompatiblen LCD im 4-Bit-Interfacemodus
 // http://www.mikrocontroller.net/articles/AVR-GCC-Tutorial/LCD-Ansteuerung
 //
+
+/*
+LCD1 portmap
+BIT0 -> PC0
+BIT1 -> PC1
+BIT2 -> PC2
+BIT3 -> PC3
+RS   -> PC4
+EN   -> PC5
+ */
  
+/*
+LCD2 portmap
+BIT0 -> PD5
+BIT1 -> PD7
+BIT2 -> PD6
+BIT3 -> PD1
+RS   -> PD0
+EN   -> PD4
+ */
+
 #ifndef LCD_ROUTINES_H
 #define LCD_ROUTINES_H
  
