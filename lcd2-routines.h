@@ -79,39 +79,38 @@ EN   -> PD4
  
 ////////////////////////////////////////////////////////////////////////////////
 // Initialisierung: muss ganz am Anfang des Programms aufgerufen werden.
-void LCD2_init( void );
+void lcd2_init( void );
  
 ////////////////////////////////////////////////////////////////////////////////
 // LCD lschen
-void LCD2_clear( void );
+void lcd2_clear( void );
  
 ////////////////////////////////////////////////////////////////////////////////
 // Cursor in die 1. Zeile, 0-te Spalte
-void LCD2_home( void );
+void lcd2_home( void );
  
 ////////////////////////////////////////////////////////////////////////////////
 // Cursor an eine beliebige Position 
-void LCD2_setcursor( uint8_t spalte, uint8_t zeile );
+void lcd2_setcursor( uint8_t spalte, uint8_t zeile );
  
 ////////////////////////////////////////////////////////////////////////////////
 // Ausgabe eines einzelnen Zeichens an der aktuellen Cursorposition 
-void LCD2_data( uint8_t data );
+void lcd2_data( uint8_t data );
  
 ////////////////////////////////////////////////////////////////////////////////
 // Ausgabe eines Strings an der aktuellen Cursorposition 
-void LCD2_string( const char *data );
-void LCD2_num(uint8_t number);
-void LCD2_bit(uint8_t truth);
- 
+void lcd2_string( const char *data );
+void lcd2_num(uint8_t number);
+void lcd2_bit(uint8_t truth);
 ////////////////////////////////////////////////////////////////////////////////
 // Definition eines benutzerdefinierten Sonderzeichens.
 // data muss auf ein Array[5] mit den Spaltencodes des zu definierenden Zeichens
 // zeigen
-void LCD2_generatechar( uint8_t code, const uint8_t *data );
+void lcd2_generatechar( uint8_t code, const uint8_t *data );
  
 ////////////////////////////////////////////////////////////////////////////////
 // Ausgabe eines Kommandos an das LCD.
-void LCD2_command( uint8_t data );
+void lcd2_command( uint8_t data );
  
  
 ////////////////////////////////////////////////////////////////////////////////
