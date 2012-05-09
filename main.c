@@ -23,19 +23,18 @@
 
 /* ------------------------------------------------------------------------- */
 
-static uchar    reportBuffers[4][8] = {{1,0,0,0,0,0,0,0},
-									   {2,0,0,0,0,0,0,0},
-									   {3,0,0,0,0,0,0,0},
-									   {4,0,0,0,0,0,0,0}};
-static uchar    reportBufferSizes[] = {8,8,8,8};
-static uchar    reportBufferChanged[] = {1,1,1,1};
+#include "numsticks.h"
+
+static uchar    reportBuffers[NUMBER_OF_STICKS][8];
+static uchar    reportBufferSizes[NUMBER_OF_STICKS];
+static uchar    reportBufferChanged[NUMBER_OF_STICKS];
 
 static uchar reportBufferOffset = 0;
 
 // report IDs start at 1
-#define REPORT_ID_MAX 4
+#define REPORT_ID_MAX NUMBER_OF_STICKS
 
-PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] = {
+PROGMEM const char usbHidReportDescriptorTemplate[50] = {
 
 	// begin report descriptor for (1 byte ID, 3 byte buttons, 4 byte axis values)
 	// length is 50 byte, report length is 8 byte
@@ -64,88 +63,6 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
     0x81, 0x02,                    // INPUT (Data,Var,Abs)
     0xc0,                           // END_COLLECTION
 	0xc0,                           // END_COLLECTION  
-	// begin report descriptor for (1 byte ID, 3 byte buttons, 4 byte axis values)
-	// length is 50 byte, report length is 8 byte
-    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-    0x09, 0x04,                    // USAGE (Joystick)
-	0xa1, 0x01,                    // COLLECTION (Application)
-    0xa1, 0x00,                    // COLLECTION (Physical)
-    0x85, 0x02,                    //   REPORT_ID (2)
-    0x05, 0x09,                    // USAGE_PAGE (Button)
-    0x19, 0x01,                    // USAGE_MINIMUM (Button 1)
-    0x29, 0x18,                    // USAGE_MAXIMUM (Button 24)
-    0x15, 0x00,                    // LOGICAL_MINIMUM (0)
-    0x25, 0x01,                    // LOGICAL_MAXIMUM (1)
-    0x75, 0x01,                    // REPORT_SIZE (1)
-    0x95, 0x18,                    // REPORT_COUNT (24)
-    0x81, 0x02,                    // INPUT (Data,Var,Abs)
-    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-	0x09, 0x33,                    //   USAGE (Rx)
-    0x09, 0x34,                    //   USAGE (Ry)
-    0x09, 0x35,                    //   USAGE (Rz)
-    0x09, 0x36,                    //   USAGE (Slider)
-    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
-    0x46, 0xff, 0x00,              //   PHYSICAL_MAXIMUM (255)
-    0x75, 0x08,                    //   REPORT_SIZE (8)
-    0x95, 0x04,                    //   REPORT_COUNT (4)
-    0x81, 0x02,                    // INPUT (Data,Var,Abs)
-    0xc0,                           // END_COLLECTION
-	0xc0,                           // END_COLLECTION  
-	// begin report descriptor for (1 byte ID, 3 byte buttons, 4 byte axis values)
-	// length is 50 byte, report length is 8 byte
-    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-    0x09, 0x04,                    // USAGE (Joystick)
-	0xa1, 0x01,                    // COLLECTION (Application)
-    0xa1, 0x00,                    // COLLECTION (Physical)
-    0x85, 0x03,                    //   REPORT_ID (3)
-    0x05, 0x09,                    // USAGE_PAGE (Button)
-    0x19, 0x01,                    // USAGE_MINIMUM (Button 1)
-    0x29, 0x18,                    // USAGE_MAXIMUM (Button 24)
-    0x15, 0x00,                    // LOGICAL_MINIMUM (0)
-    0x25, 0x01,                    // LOGICAL_MAXIMUM (1)
-    0x75, 0x01,                    // REPORT_SIZE (1)
-    0x95, 0x18,                    // REPORT_COUNT (24)
-    0x81, 0x02,                    // INPUT (Data,Var,Abs)
-    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-	0x09, 0x33,                    //   USAGE (Rx)
-    0x09, 0x34,                    //   USAGE (Ry)
-    0x09, 0x35,                    //   USAGE (Rz)
-    0x09, 0x36,                    //   USAGE (Slider)
-    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
-    0x46, 0xff, 0x00,              //   PHYSICAL_MAXIMUM (255)
-    0x75, 0x08,                    //   REPORT_SIZE (8)
-    0x95, 0x04,                    //   REPORT_COUNT (4)
-    0x81, 0x02,                    // INPUT (Data,Var,Abs)
-    0xc0,                           // END_COLLECTION
-	0xc0,                           // END_COLLECTION  
-	// begin report descriptor for (1 byte ID, 3 byte buttons, 4 byte axis values)
-	// length is 50 byte, report length is 8 byte
-    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-    0x09, 0x04,                    // USAGE (Joystick)
-	0xa1, 0x01,                    // COLLECTION (Application)
-    0xa1, 0x00,                    // COLLECTION (Physical)
-    0x85, 0x04,                    //   REPORT_ID (4)
-    0x05, 0x09,                    // USAGE_PAGE (Button)
-    0x19, 0x01,                    // USAGE_MINIMUM (Button 1)
-    0x29, 0x18,                    // USAGE_MAXIMUM (Button 24)
-    0x15, 0x00,                    // LOGICAL_MINIMUM (0)
-    0x25, 0x01,                    // LOGICAL_MAXIMUM (1)
-    0x75, 0x01,                    // REPORT_SIZE (1)
-    0x95, 0x18,                    // REPORT_COUNT (24)
-    0x81, 0x02,                    // INPUT (Data,Var,Abs)
-    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-	0x09, 0x33,                    //   USAGE (Rx)
-    0x09, 0x34,                    //   USAGE (Ry)
-    0x09, 0x35,                    //   USAGE (Rz)
-    0x09, 0x36,                    //   USAGE (Slider)
-    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
-    0x46, 0xff, 0x00,              //   PHYSICAL_MAXIMUM (255)
-    0x75, 0x08,                    //   REPORT_SIZE (8)
-    0x95, 0x04,                    //   REPORT_COUNT (4)
-    0x81, 0x02,                    // INPUT (Data,Var,Abs)
-    0xc0,                           // END_COLLECTION
-	0xc0,                           // END_COLLECTION  
-
 
 };
 
@@ -185,6 +102,20 @@ static uint8_t readByteSpi() {
 /* ------------------------ interface to USB driver ------------------------ */
 /* -------------------------------------------------------------------------------- */
 
+usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) {
+	// the only thing this is called for is to get the HID report descriptor
+	static uchar reportDescriptor[sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS];
+	
+	for (uint8_t i=0; i<NUMBER_OF_STICKS; i++) {
+		memcpy_P(reportDescriptor + (i*sizeof(usbHidReportDescriptorTemplate)), usbHidReportDescriptorTemplate, sizeof(usbHidReportDescriptorTemplate));
+		reportDescriptor[9 + i*sizeof(usbHidReportDescriptorTemplate)] = i+1; // set report id
+	}
+	
+	usbMsgPtr = &reportDescriptor;
+	
+	return sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS;
+}
+
 uchar	usbFunctionSetup(uchar data[8])
 {
 usbRequest_t    *rq = (void *)data;
@@ -223,8 +154,15 @@ void parallelIn() {
 
 int main(void)
 {
-uchar   i;
+	uchar   i;
     
+	memset(reportBuffers, 0, NUMBER_OF_STICKS * 8);
+	for (i=0; i<NUMBER_OF_STICKS;i++) {
+		reportBuffers[i][0] = i+1;   // set REPORT IDs
+		reportBufferChanged[i] = 1;
+		reportBufferSizes[i] = 8;
+	}
+	
     usbInit();
     usbDeviceDisconnect();  /* enforce re-enumeration, do this while interrupts are disabled! */
     i = 0;

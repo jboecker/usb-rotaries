@@ -11,6 +11,7 @@
 #ifndef __usbconfig_h_included__
 #define __usbconfig_h_included__
 
+#include "numsticks.h"
 
 /* ---------------------------- Hardware Config ---------------------------- */
 
@@ -265,7 +266,7 @@ extern void hadUsbReset(void);
  * HID class is 3, no subclass and protocol required (but may be useful!)
  * CDC class is 2, use subclass 2 and protocol 1 for ACM
  */
-#define USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH    200 /* total length of report descriptor */
+#define USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH    (50*NUMBER_OF_STICKS) /* total length of report descriptor */
 /* Define this to the length of the HID report descriptor, if you implement
  * an HID device. Otherwise don't define it or define it to 0.
  * If you use this define, you must add a PROGMEM character array named
@@ -338,7 +339,7 @@ extern void hadUsbReset(void);
 #define USB_CFG_DESCR_PROPS_STRING_PRODUCT          0
 #define USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER    0
 #define USB_CFG_DESCR_PROPS_HID                     0
-#define USB_CFG_DESCR_PROPS_HID_REPORT              0
+#define USB_CFG_DESCR_PROPS_HID_REPORT              (USB_PROP_IS_DYNAMIC | USB_PROP_IS_RAM)
 #define USB_CFG_DESCR_PROPS_UNKNOWN                 0
 
 /* ----------------------- Optional MCU Description ------------------------ */
