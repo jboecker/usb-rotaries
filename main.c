@@ -240,24 +240,6 @@ int main(void)
 		for (uint8_t i=0; i<9; i++)
 			oldstates[i] = newstates[i];
 
-		// output
-		/*
-		lcd_home();
-		lcd_num(axisValues[0]); lcd_data(' ');
-		lcd_num(axisValues[1]); lcd_data(' ');
-		lcd_num(axisValues[2]); lcd_data(' ');
-		lcd_num(axisValues[3]); lcd_data(' ');
-		lcd_setcursor(0,2);
-		lcd_num(axisValues[4]); lcd_data(' ');
-		lcd_num(axisValues[5]); lcd_data(' ');
-		lcd_num(axisValues[6]); lcd_data(' ');
-		lcd_num(axisValues[7]); lcd_data(' ');
-		
-		lcd2_home();
-		lcd2_num(axisValues[8]);
-		////
-		*/
-		
         wdt_reset();
         usbPoll();
 
