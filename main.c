@@ -111,7 +111,7 @@ usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) {
 		reportDescriptor[9 + i*sizeof(usbHidReportDescriptorTemplate)] = i+1; // set report id
 	}
 	
-	usbMsgPtr = &reportDescriptor;
+	usbMsgPtr = (uchar*)&reportDescriptor;
 	
 	return sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS;
 }
