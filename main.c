@@ -23,10 +23,16 @@
 
 /* ------------------------------------------------------------------------- */
 
-static uchar    reportBuffer1[3] = {1,0,0};
-static uchar    reportBuffer2[7] = {2,0,0,0,0,0,0};
-static uchar    reportBufferKbd[8] = {3,0,0,0,0,0,0,0};
-static uchar    newKbdReport = 0;
+static uchar    reportBuffers[3][8] = {{1,0,0,0,0,0,0,0},
+									 {2,0,0,0,0,0,0,0},
+									 {3,0,0,0,0,0,0,0}};
+static uchar    reportBufferSizes[] = {3,7,8};
+static uchar    reportBufferChanged[] = {1,1,1};
+
+// report IDs start at 1
+#define REPORT_ID_MAX 3
+#define REPORT_ID_KEYBOARD 3
+
 
 PROGMEM const char usbHidReportDescriptor[142] = {
 	//PROGMEM const char usbHidReportDescriptor[65] = {
@@ -103,70 +109,9 @@ PROGMEM const char usbHidReportDescriptor[142] = {
 };
 
 static uchar    idleRate;           /* in 4 ms units */
-static uchar    newReport = 0;		/* current report */
-
-
-PROGMEM const uint8_t chardata_switch_up[8] = {
-	0b00011111,
-	0b00011011,
-	0b00010001,
-	0b00011111,
-	0b00000000,
-	0b00000000,
-	0b00000000,
-	0b00000000
-};
-PROGMEM const uint8_t chardata_switch_down[8] = {
-	0b00000000,
-	0b00000000,
-	0b00011111,
-	0b00010001,
-	0b00010001,
-	0b00011111,
-	0b00000000,
-	0b00000000
-};
-PROGMEM const uint8_t chardata_switch_mid[8] = {
-	0b00000000,
-	0b00000000,
-	0b00000000,
-	0b00000000,
-	0b00011111,
-	0b00010001,
-	0b00011011,
-	0b00011111
-};
 
 /* ------------------------------------------------------------------------- */
  
-static void timerPoll(void)
-{
-	static unsigned int timerCnt;
-	static char text[] = {'W','a','s',' ','w','a','e','r','e',' ','e','i','n',' ','L','C','D',' ','o','h','n','e',' ','L','a','u','f','s','c','h','r','i','f','t','?',' ','+','+','+',' ','\0'};
-	static uint8_t startoffset = 0;
-
-	if (TIFR0 & (1<<TOV0)){ /* 22 ms timer */
-		TIFR0 = 1<<TOV0;  /* clear overflow */
-		if (++timerCnt >= 12){
-			timerCnt = 0;
-			lcd_setcursor(0,2);
-			
-			char* pos = text + startoffset;
-			for (uint8_t i=0; i<20; i++) {
-				lcd_data(*pos);
-				pos++;
-				if (*pos == '\0')
-					pos = text;
-			}
-
-			startoffset++;
-			if (startoffset >= sizeof(text)) startoffset = 0;
-		}
-	}
-}
-
-
-
 void hadUsbReset(void) { return; }
 
 /* ------------------------------------------------------------------------- */
@@ -178,8 +123,6 @@ static void hardwareInit(void)
 	DDRB    = (1<<PB2)|(1<<PB3)|(1<<PB5);
 	PORTB &= ~((1<<PB4)); // make sure MISO pull-up is disabled
 	PORTB &= ~(1<<PB2); // clear PARALLEL INPUT
-
-    TCCR0B = 5;      /* timer 0 prescaler: 1024 */
 
 }
 
@@ -208,15 +151,8 @@ usbRequest_t    *rq = (void *)data;
     usbMsgPtr = NULL;
     if((rq->bmRequestType & USBRQ_TYPE_MASK) == USBRQ_TYPE_CLASS){    /* class request type */
         if(rq->bRequest == USBRQ_HID_GET_REPORT){  /* wValue: ReportType (highbyte), ReportID (lowbyte) */
-						if (rq->wValue.bytes[1] == 1) { // look at the ReportID
-				usbMsgPtr = reportBuffer1;
-				return sizeof(reportBuffer1);
-			} else if (rq->wValue.bytes[1] == 2) {
-				usbMsgPtr = reportBuffer2;
-				return sizeof(reportBuffer2);
-			} else if (rq->wValue.bytes[1] == 3) {
-				usbMsgPtr = reportBufferKbd;
-							}
+			usbMsgPtr = reportBuffers[rq->wValue.bytes[1] - 1];
+			return reportBufferSizes[rq->wValue.bytes[1] - 1];
         }else if(rq->bRequest == USBRQ_HID_GET_IDLE){
             usbMsgPtr = &idleRate;
             return 1;
@@ -243,6 +179,7 @@ void parallelIn() {
 
 }
 
+
 int main(void)
 {
 uchar   i;
@@ -262,81 +199,86 @@ uchar   i;
 	
 	lcd_init();
 	lcd_clear();
-    lcd_generatechar(LCD_GC_CHAR0, chardata_switch_up);
-	lcd_generatechar(LCD_GC_CHAR1, chardata_switch_down);
-	lcd_generatechar(LCD_GC_CHAR2, chardata_switch_mid);
 
-	lcd_clear();
-	lcd_home();
-	
 	lcd2_init();
 	lcd2_clear();
-	lcd2_string("This is LCD 2.");
-	lcd2_setcursor(0,2);
-	lcd2_string("Line 2.");
 
     sei();
 
-	
-	uint8_t axisValues[9] = {0,0,0,0,0,0,0,0,0};
-	uint8_t currentAxis = 0;
-	uint8_t oldstate = 0x00;
-	uint8_t newstate;
-	uint8_t events;
+	static uint8_t axisValues[9] ={0,0,0,0,0,0,0,0,0};
+	static uint8_t events[9] =    {0,0,0,0,0,0,0,0,0};
+	static uint8_t oldstates[9] = {0,0,0,0,0,0,0,0,0};
+	static uint8_t newstates[9] = {0,0,0,0,0,0,0,0,0};
+
     for(;;){    /* main event loop */
-		
 		/* */
 		parallelIn();
-		newstate = readByteSpi();
-		events = encoder_events(oldstate, newstate);
-		if (events & ECEV_LEFT) axisValues[currentAxis]--;
-		if (events & ECEV_RIGHT) axisValues[currentAxis]++;
-		if (events & ECEV_BUTTON_DOWN) reportBuffer1[1] |= 1;
-		if (events & ECEV_BUTTON_UP) reportBuffer1[1] &= ~1;
-	
-		events = encoder_events((oldstate >> 3), (newstate >> 3));
-		if (events & ECEV_LEFT) { currentAxis--; if (currentAxis == 255) currentAxis = 8; }
-		if (events & ECEV_RIGHT) { currentAxis++; if (currentAxis > 8) currentAxis = 0; }
-		if (events & ECEV_BUTTON_DOWN) { reportBufferKbd[5] = axisValues[0]; newKbdReport = 0; }
-		if (events & ECEV_BUTTON_UP) { reportBufferKbd[5] = 0; newKbdReport = 0; }
-	
-		oldstate=newstate;
+		uint8_t byte = readByteSpi();
+		newstates[0] = (byte >> 5);
+		newstates[1] = (byte >> 2);
+		newstates[2] = ((byte << 1) & 0b00000110);
+
+		byte = readByteSpi();
+		newstates[2] |= ((byte >> 7) & 0b00000001);
+		newstates[3] = (byte >> 4);
+		newstates[4] = (byte >> 1);
+		newstates[5] = (byte << 2) & 0b00000100;
+
+		byte = readByteSpi();
+		newstates[5] |= ((byte >> 6) & 0b00000011);
+		newstates[6] = (byte >> 3);
+		newstates[7] = byte;
 		
-		//		reportBuffer1[1] = axisValues[0];
-		//        reportBuffer1[2] = axisValues[1];
-		//		reportBuffer1[3] = axisValues[2];
+		byte = readByteSpi();
+		newstates[8] = (byte >> 5);
 		
-		reportBuffer2[1] = axisValues[3];
-		reportBuffer2[2] = axisValues[4];
-		reportBuffer2[3] = axisValues[5];
-		reportBuffer2[4] = axisValues[6];
-		reportBuffer2[5] = axisValues[7];
-		reportBuffer2[6] = axisValues[8];
+		for (uint8_t i = 0; i<9; i++) {
+			events[i] = encoder_events(oldstates[i], newstates[i]);
+		}
+
+		// TODO: react to events
+		for (uint8_t i = 0; i<9; i++) {
+			if (events[i] & ECEV_LEFT) axisValues[i] -= 5;
+			if (events[i] & ECEV_RIGHT) axisValues[i] += 5;
+		}
 		
-   
+		for (uint8_t i=0; i<9; i++)
+			oldstates[i] = newstates[i];
+
+		// output
 		lcd_home();
-		lcd_num(currentAxis); lcd_data(' '); lcd_num(axisValues[currentAxis]);
-		lcd_data(' '); lcd_data(0); lcd_data(1); lcd_data(2);
+		lcd_num(axisValues[0]); lcd_data(' ');
+		lcd_num(axisValues[1]); lcd_data(' ');
+		lcd_num(axisValues[2]); lcd_data(' ');
+		lcd_num(axisValues[3]); lcd_data(' ');
+		lcd_setcursor(0,2);
+		lcd_num(axisValues[4]); lcd_data(' ');
+		lcd_num(axisValues[5]); lcd_data(' ');
+		lcd_num(axisValues[6]); lcd_data(' ');
+		lcd_num(axisValues[7]); lcd_data(' ');
+		
+		lcd2_home();
+		lcd2_num(axisValues[8]);
+		////
+
 		
         wdt_reset();
         usbPoll();
 
-		
-		newReport = 0;
-		static uchar reportNumber = 1;
-		reportNumber++; if (reportNumber == 4) reportNumber = 1;
-		if(usbInterruptIsReady() && newReport == 0){ /* we can send another report */
-			if (reportNumber == 1) {
-				usbSetInterrupt(reportBuffer1, sizeof(reportBuffer1));
-			} else if (reportNumber == 2) {
-				usbSetInterrupt(reportBuffer2, sizeof(reportBuffer2));
-			} else if (reportNumber == 3 && newKbdReport == 0) {
-				usbSetInterrupt(reportBufferKbd, sizeof(reportBufferKbd));
-				newKbdReport = 1;
+		static uint8_t startReportId = 0;
+		if(usbInterruptIsReady()){ /* we can send another report */
+			startReportId++;
+			for (uint8_t k = 0; k < REPORT_ID_MAX; k++) {
+				uint8_t i = (startReportId + k) % (REPORT_ID_MAX - 1);
+				if (reportBufferChanged[i]) {
+					usbSetInterrupt(reportBuffers[i], reportBufferSizes[i]);
+					reportBufferChanged[i] = 0;
+					break;
+				}
 			}
+			
 		}
         
-		timerPoll();
 	}
    	return 0;
 

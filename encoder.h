@@ -12,16 +12,16 @@ typedef unsigned char uint8_t;
 #define ECEV_RIGHT (1<<3)
 
 // encoder state
-#define ECST_STATEMASK_BUTTONSTATE  0b00000001
-#define ECST_STATEMASK_ENCODERSTATE 0b00000110
+#define ECST_STATEMASK_BUTTONSTATE  0b00000100
+#define ECST_STATEMASK_ENCODERSTATE 0b00000011
 
 // encoder states are arbitrarily named NORTH, EAST, SOUTH and WEST
 // signal "left rotation": states NORTH -> WEST -> SOUTH -> EAST -> NORTH
 // signal "right rotation":states NORTH -> EAST -> SOUTH -> WEST -> NORTH
-#define ECST_NORTH 0b00000000
-#define ECST_EAST  0b00000010
-#define ECST_SOUTH 0b00000110
-#define ECST_WEST  0b00000100
+#define ECST_NORTH 0b00000011
+#define ECST_EAST  0b00000001
+#define ECST_SOUTH 0b00000000
+#define ECST_WEST  0b00000010
 
 #define ECST_DEFAULT_STATE ECST_NORTH
 
