@@ -194,6 +194,14 @@ void lcd2_bit(uint8_t expr) {
 		lcd2_data('0');
 }
 
+void lcd2_byte(uint8_t byte) {
+	for (uint8_t i=0; i<8; i++) {
+		lcd2_bit(byte & 0b10000000);
+		byte <<= 1;
+	}
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Schreibt ein Zeichen in den Character Generator RAM
  

@@ -102,6 +102,8 @@ void lcd2_data( uint8_t data );
 void lcd2_string( const char *data );
 void lcd2_num(uint8_t number);
 void lcd2_bit(uint8_t truth);
+void lcd2_byte(uint8_t byte); 
+
 ////////////////////////////////////////////////////////////////////////////////
 // Definition eines benutzerdefinierten Sonderzeichens.
 // data muss auf ein Array[5] mit den Spaltencodes des zu definierenden Zeichens

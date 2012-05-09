@@ -99,6 +99,7 @@ void lcd_data( uint8_t data );
 void lcd_string( const char *data );
 void lcd_num(uint8_t number);
 void lcd_bit(uint8_t truth);
+void lcd_byte(uint8_t byte);
  
 ////////////////////////////////////////////////////////////////////////////////
 // Definition eines benutzerdefinierten Sonderzeichens.
