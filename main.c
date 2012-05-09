@@ -18,6 +18,7 @@
 
 #include "usbdrv.h"
 #include "lcd-routines.h"
+#include "lcd2-routines.h"
 #include "encoder.h"
 
 /* ------------------------------------------------------------------------- */
@@ -268,6 +269,12 @@ uchar   i;
 	lcd_clear();
 	lcd_home();
 	
+	lcd2_init();
+	lcd2_clear();
+	lcd2_string("This is LCD 2.");
+	lcd2_setcursor(0,2);
+	lcd2_string("Line 2.");
+
     sei();
 
 	
