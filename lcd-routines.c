@@ -10,40 +10,81 @@
 #include <string.h>
 #include <util/delay.h>
 
+static uint8_t selected_lcd = 1;
  
+void lcd_select( uint8_t number ) {
+	if (number == 1 || number == 2) selected_lcd = number;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Erzeugt einen Enable-Puls
 static void lcd_enable( void )
 {
-    LCD_PORT |= (1<<LCD_EN);     // Enable auf 1 setzen
-    _delay_us( LCD_ENABLE_US );  // kurze Pause
-    LCD_PORT &= ~(1<<LCD_EN);    // Enable auf 0 setzen
+	if (selected_lcd == 1) {
+		LCD_PORT |= (1<<LCD_EN);     // Enable auf 1 setzen
+		_delay_us( LCD_ENABLE_US );  // kurze Pause
+		LCD_PORT &= ~(1<<LCD_EN);    // Enable auf 0 setzen
+	} else {
+		    LCD2_PORT |= (1<<LCD2_EN);     // Enable auf 1 setzen
+			_delay_us( LCD_ENABLE_US );  // kurze Pause
+			LCD2_PORT &= ~(1<<LCD2_EN);    // Enable auf 0 setzen
+	}
 }
  
 ////////////////////////////////////////////////////////////////////////////////
 // Sendet eine 4-bit Ausgabeoperation an das LCD
 static void lcd_out( uint8_t data )
 {
-    data &= 0xF0;                       // obere 4 Bit maskieren
- 
-    LCD_PORT &= ~(0xF0>>(4-LCD_DB));    // Maske lschen
-    LCD_PORT |= (data>>(4-LCD_DB));     // Bits setzen
-    lcd_enable();
+	data &= 0xF0;                       // obere 4 Bit maskieren
+		
+	if (selected_lcd == 1) {
+		LCD_PORT &= ~(0xF0>>(4-LCD_DB));    // Maske lschen
+		LCD_PORT |= (data>>(4-LCD_DB));     // Bits setzen
+	} else {
+		LCD2_PORT &= ~(1 << LCD2_BIT0);
+		LCD2_PORT &= ~(1 << LCD2_BIT1);
+		LCD2_PORT &= ~(1 << LCD2_BIT2);
+		LCD2_PORT &= ~(1 << LCD2_BIT3);
+		
+		if (data & 16)
+			LCD2_PORT |= (1 << LCD2_BIT0);
+		if (data & 32)
+			LCD2_PORT |= (1 << LCD2_BIT1);
+		if (data & 64)
+			LCD2_PORT |= (1 << LCD2_BIT2);
+		if (data & 128)
+			LCD2_PORT |= (1 << LCD2_BIT3);
+	}
+	lcd_enable();
+   
 }
  
 ////////////////////////////////////////////////////////////////////////////////
 // Initialisierung: muss ganz am Anfang des Programms aufgerufen werden.
 void lcd_init( void )
 {
-    // verwendete Pins auf Ausgang schalten
-    uint8_t pins = (0x0F << LCD_DB) |           // 4 Datenleitungen
-                   (1<<LCD_RS) |                // R/S Leitung
-                   (1<<LCD_EN);                 // Enable Leitung
-    LCD_DDR |= pins;
- 
-    // initial alle Ausgnge auf Null
-    LCD_PORT &= ~pins;
- 
+	if (selected_lcd == 1) {
+		// verwendete Pins auf Ausgang schalten
+		uint8_t pins = (0x0F << LCD_DB) |           // 4 Datenleitungen
+			(1<<LCD_RS) |                // R/S Leitung
+			(1<<LCD_EN);                 // Enable Leitung
+		LCD_DDR |= pins;
+		
+		// initial alle Ausgnge auf Null
+		LCD_PORT &= ~pins;
+	} else {
+		// verwendete Pins auf Ausgang schalten
+		uint8_t pins = (1 << LCD2_BIT0) |           // 4 Datenleitungen
+			(1 << LCD2_BIT1) |
+			(1 << LCD2_BIT2) |
+			(1 << LCD2_BIT3) |
+			(1<<LCD2_RS) |                // R/S Leitung
+			(1<<LCD2_EN);                 // Enable Leitung
+		LCD2_DDR |= pins;
+		
+		// initial alle Ausgnge auf Null
+		LCD2_PORT &= ~pins;		
+	}
     // warten auf die Bereitschaft des LCD
     _delay_ms( LCD_BOOTUP_MS );
     
@@ -86,7 +127,11 @@ void lcd_init( void )
 // Sendet ein Datenbyte an das LCD
 void lcd_data( uint8_t data )
 {
-    LCD_PORT |= (1<<LCD_RS);    // RS auf 1 setzen
+	if (selected_lcd == 1) {
+		LCD_PORT |= (1<<LCD_RS);    // RS auf 1 setzen
+	} else {
+		LCD2_PORT |= (1<<LCD2_RS);    // RS auf 1 setzen
+	}
  
     lcd_out( data );            // zuerst die oberen, 
     lcd_out( data<<4 );         // dann die unteren 4 Bit senden
@@ -98,7 +143,11 @@ void lcd_data( uint8_t data )
 // Sendet einen Befehl an das LCD
 void lcd_command( uint8_t data )
 {
-    LCD_PORT &= ~(1<<LCD_RS);    // RS auf 0 setzen
+	if (selected_lcd == 1) {
+		LCD_PORT &= ~(1<<LCD_RS);    // RS auf 0 setzen
+	} else {
+		    LCD2_PORT &= ~(1<<LCD2_RS);    // RS auf 0 setzen
+	}
  
     lcd_out( data );             // zuerst die oberen, 
     lcd_out( data<<4 );           // dann die unteren 4 Bit senden

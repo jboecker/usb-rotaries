@@ -47,6 +47,23 @@ EN   -> PD4
  
 //  LCD EN      <-->  PORTD Bit PD5     (EN: 1-Impuls fr Daten)
 #define LCD_EN        PC5
+
+/////////// LCD2 defines ///////////////
+#define LCD2_PORT      PORTD
+#define LCD2_DDR       DDRD
+#define LCD2_BIT0     PD5
+#define LCD2_BIT1     PD7
+#define LCD2_BIT2     PD6
+#define LCD2_BIT3     PD1
+ 
+//  LCD RS      <-->  PORTD Bit PD4     (RS: 1=Data, 0=Command)
+#define LCD2_RS        PD0
+ 
+//  LCD EN      <-->  PORTD Bit PD5     (EN: 1-Impuls fr Daten)
+#define LCD2_EN        PD4
+ 
+
+
  
 ////////////////////////////////////////////////////////////////////////////////
 // LCD Ausfhrungszeiten (MS=Millisekunden, US=Mikrosekunden)
@@ -73,6 +90,8 @@ EN   -> PD4
 #define LCD_DDADR_LINE2         0x40
 #define LCD_DDADR_LINE3         0x10
 #define LCD_DDADR_LINE4         0x50
+
+void lcd_select( uint8_t lcd_number );
  
 ////////////////////////////////////////////////////////////////////////////////
 // Initialisierung: muss ganz am Anfang des Programms aufgerufen werden.

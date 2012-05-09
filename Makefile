@@ -15,7 +15,7 @@ UISP = uisp -dprog=avr910 -dserial=$(SERIAL) -dpart=auto
 
 COMPILE = avr-gcc -std=c99 -Wall -Os -Iusbdrv -I. -mmcu=atmega48
 
-OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o lcd-routines.o lcd2-routines.o encoder.o main.o
+OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o lcd-routines.o encoder.o main.o
 
 # symbolic targets:
 all:	main.hex

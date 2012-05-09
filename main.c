@@ -18,7 +18,6 @@
 
 #include "usbdrv.h"
 #include "lcd-routines.h"
-#include "lcd2-routines.h"
 #include "encoder.h"
 
 /* ------------------------------------------------------------------------- */
@@ -176,11 +175,14 @@ int main(void)
 
     hardwareInit();
 	
+	lcd_select(1);
 	lcd_init();
 	lcd_clear();
-
-	lcd2_init();
-	lcd2_clear();
+	lcd_string("Hello.");
+	
+	lcd_select(2);
+	lcd_init();
+	lcd_clear();
 
     sei();
 
@@ -227,13 +229,15 @@ int main(void)
 		}
 		if (events[8] & ECEV_LEFT) {
 			reportBufferOffset = 0;
-			lcd2_clear();
-			lcd2_string("Stick 1");
+			lcd_select(2);
+			lcd_clear();
+			lcd_string("Stick 1");
 		}
 		if (events[8] & ECEV_RIGHT) {
 			reportBufferOffset = 2;
-			lcd2_clear();
-			lcd2_string("Stick 2");
+			lcd_select(2);
+			lcd_clear();
+			lcd_string("Stick 2");
 		}
 		
 		
