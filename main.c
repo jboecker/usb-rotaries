@@ -73,6 +73,23 @@ void hadUsbReset(void) { return; }
 
 /* ------------------------------------------------------------------------- */
 
+static unsigned int buttonReleaseDelayTimerCount;
+static uchar canReleaseButtons = 0;
+static void resetButtonReleaseTimer() {
+	buttonReleaseDelayTimerCount = 0;
+	canReleaseButtons = 0;
+}
+static void timerPoll(void)
+{
+	if (TIFR0 & (1<<TOV0)){ /* 22 ms timer */
+		TIFR0 = 1<<TOV0;  /* clear overflow */
+		if (++buttonReleaseDelayTimerCount >= 2){
+			buttonReleaseDelayTimerCount = 0;
+			canReleaseButtons = 1;
+		}
+	}
+}
+
 static void hardwareInit(void)
 {
 	/**** SPI initialization ****/
@@ -81,6 +98,7 @@ static void hardwareInit(void)
 	PORTB &= ~((1<<PB4)); // make sure MISO pull-up is disabled
 	PORTB &= ~(1<<PB2); // clear PARALLEL INPUT
 
+	TCCR0B = 5;      /* timer 0 prescaler: 1024 */
 }
 
 static uint8_t readByteSpi() {
@@ -150,11 +168,51 @@ void parallelIn() {
 
 }
 
+// bitmask; buttonTap sets a bit here, so the button is released later
+static uchar buttonsAwaitingRelease[NUMBER_OF_STICKS][3];
+
+void noAction() {}
+void buttonDown(uchar reportId, uchar buttonNumber) {
+	reportBuffers[reportId-1][1 + ((buttonNumber-1)/8)] |= (1 << (buttonNumber-1)%8);
+	reportBufferChanged[reportId-1] = 1;
+}
+void buttonUp(uchar reportId, uchar buttonNumber) {
+	reportBuffers[reportId-1][1 + ((buttonNumber-1)/8)] &= ~(1 << (buttonNumber-1)%8);
+	reportBufferChanged[reportId-1] = 1;
+}
+void buttonTap(uchar reportId, uchar buttonNumber) {
+	buttonDown(reportId, buttonNumber);
+	buttonsAwaitingRelease[reportId-1][(buttonNumber-1)/8] |= (1 << ((buttonNumber-1)%8));
+	resetButtonReleaseTimer();
+}
+void axisDelta(uchar reportId, uchar axisNumber, char delta) {
+	uchar* value = &reportBuffers[reportId-1][3+axisNumber];
+	int16_t temp = ((int16_t) *value) + (int16_t)delta;
+	if ((0 <= temp) && (temp <= 255))
+		*value += delta;
+	reportBufferChanged[reportId-1] = 1;
+}
+
+void handleInput(uchar events[9]) {
+	uchar event;
+
+	/* set buttons 1 to 24 to react to dials 1 through 8 */
+	for (uchar i=0; i<8; i++) {
+		event = events[i];
+		if (event & ECEV_BUTTON_DOWN) buttonDown(1,1+(i*3));
+		if (event & ECEV_BUTTON_UP) buttonUp(1,1+(i*3));
+		if (event & ECEV_LEFT) buttonTap(1,2+(i*3));
+		if (event & ECEV_RIGHT) buttonTap(1,3+(i*3));	
+	}
+
+
+}
 
 int main(void)
 {
 	uchar   i;
     
+	memset(buttonsAwaitingRelease, 0, sizeof(buttonsAwaitingRelease));
 	memset(reportBuffers, 0, NUMBER_OF_STICKS * 8);
 	for (i=0; i<NUMBER_OF_STICKS;i++) {
 		reportBuffers[i][0] = i+1;   // set REPORT IDs
@@ -216,36 +274,29 @@ int main(void)
 			events[i] = encoder_events(oldstates[i], newstates[i]);
 		}
 
-		// TODO: react to events
-		for (uint8_t i = 0; i<4; i++) {
-			if (events[i] & ECEV_LEFT) if (reportBuffers[reportBufferOffset][4+i] > 4) reportBuffers[reportBufferOffset][4+i] -= 5;
-			if (events[i] & ECEV_RIGHT) if (reportBuffers[reportBufferOffset][4+i] < 251) reportBuffers[reportBufferOffset][4+i] += 5;
-			reportBufferChanged[reportBufferOffset] = 1;
-		}
-		for (uint8_t i = 4; i<8; i++) {
-			if (events[i] & ECEV_LEFT) if (reportBuffers[reportBufferOffset+1][i] > 4) reportBuffers[reportBufferOffset + 1][i] -= 5;
-			if (events[i] & ECEV_RIGHT) if (reportBuffers[reportBufferOffset+1][i] < 251) reportBuffers[reportBufferOffset + 1][i] += 5;
-			reportBufferChanged[reportBufferOffset + 1] = 1;
-		}
-		if (events[8] & ECEV_LEFT) {
-			reportBufferOffset = 0;
-			lcd_select(2);
-			lcd_clear();
-			lcd_string("Stick 1");
-		}
-		if (events[8] & ECEV_RIGHT) {
-			reportBufferOffset = 2;
-			lcd_select(2);
-			lcd_clear();
-			lcd_string("Stick 2");
-		}
-		
+		handleInput(events);
 		
 		for (uint8_t i=0; i<9; i++)
 			oldstates[i] = newstates[i];
 
         wdt_reset();
         usbPoll();
+
+		timerPoll();
+		if (canReleaseButtons) {
+			for (i=0; i<REPORT_ID_MAX; i++) {
+				if (reportBufferChanged[i] == 0) {
+					// check if we want to release some buttons
+					for (uint8_t j=0; j<3; j++) {
+						if (buttonsAwaitingRelease[i][j] > 0) {
+							reportBuffers[i][1+j] &= ~(buttonsAwaitingRelease[i][j]);
+							buttonsAwaitingRelease[i][j] = 0x00;
+							reportBufferChanged[i] = 1;
+						}
+					}
+				}
+			}
+		}
 
 		static uint8_t startReportId = 0;
 		if(usbInterruptIsReady()){ /* we can send another report */
