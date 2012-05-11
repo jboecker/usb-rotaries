@@ -10,11 +10,11 @@ uint8_t encoder_events(uint8_t oldstate, uint8_t newstate) {
 		retevent |= ECEV_BUTTON_UP;
 
 	if (((oldstate & ECST_STATEMASK_ENCODERSTATE) == ECST_EAST) &&
-		((newstate & ECST_STATEMASK_ENCODERSTATE) == ECST_NORTH))
+		((newstate & ECST_STATEMASK_ENCODERSTATE) == ECST_SOUTH))
 		retevent |= ECEV_LEFT;
 	
 	if (((oldstate & ECST_STATEMASK_ENCODERSTATE) == ECST_WEST) &&
-		((newstate & ECST_STATEMASK_ENCODERSTATE) == ECST_NORTH))
+		((newstate & ECST_STATEMASK_ENCODERSTATE) == ECST_SOUTH))
 		retevent |= ECEV_RIGHT;
 
 	return retevent;
