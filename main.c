@@ -33,7 +33,7 @@ static uchar selectedPage = 0;
 // report IDs start at 1
 #define REPORT_ID_MAX NUMBER_OF_STICKS
 
-PROGMEM const char usbHidReportDescriptorTemplate[50] = {
+const char usbHidReportDescriptorTemplate[50] = {
 
 	// begin report descriptor for (1 byte ID, 3 byte buttons, 4 byte axis values)
 	// length is 50 byte, report length is 8 byte
@@ -119,6 +119,24 @@ static uint8_t readByteSpi() {
 /* ------------------------ interface to USB driver ------------------------ */
 /* -------------------------------------------------------------------------------- */
 
+static usbMsgLen_t reportDescriptorBytesRead = 0;
+static usbMsgLen_t reportDescriptorBytes = sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS;
+static usbMsgLen_t reportDescriptorTemplatePos = 0;
+uchar usbFunctionRead(uchar* data, uchar len) {
+	// assumption: usbFunctionRead() is only used to transfer the device descriptor
+	uchar i=0;
+	while ((i < len) && (reportDescriptorBytesRead < reportDescriptorBytes)) {
+		data[i] = usbHidReportDescriptorTemplate[reportDescriptorTemplatePos];
+		if (reportDescriptorTemplatePos == 9) data[i] = (reportDescriptorBytesRead / sizeof(usbHidReportDescriptorTemplate))+1;
+		i++;
+		reportDescriptorBytesRead++;
+		reportDescriptorTemplatePos++;
+		if (reportDescriptorTemplatePos == sizeof(usbHidReportDescriptorTemplate)) reportDescriptorTemplatePos = 0;
+	}
+	
+	return i;
+}
+
 usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) {
 	union {
 		unsigned word;
@@ -129,16 +147,10 @@ usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) {
 
 	// see which descriptor we are being asked for
 	if (rq->wValue.bytes[1] == USBDESCR_HID_REPORT) {
-		static uchar reportDescriptor[sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS];
+		reportDescriptorBytesRead = 0;
+		reportDescriptorTemplatePos = 0;
+		return USB_NO_MSG;
 		
-		for (uint8_t i=0; i<NUMBER_OF_STICKS; i++) {
-			memcpy_P(reportDescriptor + (i*sizeof(usbHidReportDescriptorTemplate)), usbHidReportDescriptorTemplate, sizeof(usbHidReportDescriptorTemplate));
-			reportDescriptor[9 + i*sizeof(usbHidReportDescriptorTemplate)] = i+1; // set report id
-		}
-		
-		usbMsgPtr = (uchar*)&reportDescriptor;
-		
-		return sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS;
 	} else if (rq->wValue.bytes[1] == USBDESCR_HID) {
 		static uchar hidDescriptor[9] = {
 			9,          /* sizeof(usbDescrHID): length of descriptor in bytes */
