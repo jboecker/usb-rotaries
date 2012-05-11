@@ -120,20 +120,93 @@ static uint8_t readByteSpi() {
 /* -------------------------------------------------------------------------------- */
 
 usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) {
-	// the only thing this is called for is to get the HID report descriptor
-	static uchar reportDescriptor[sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS];
-	
-	for (uint8_t i=0; i<NUMBER_OF_STICKS; i++) {
-		memcpy_P(reportDescriptor + (i*sizeof(usbHidReportDescriptorTemplate)), usbHidReportDescriptorTemplate, sizeof(usbHidReportDescriptorTemplate));
-		reportDescriptor[9 + i*sizeof(usbHidReportDescriptorTemplate)] = i+1; // set report id
+	union {
+		unsigned word;
+		uchar bytes[2];
+	} reportDescriptorLength;
+	reportDescriptorLength.word = sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS;
+
+
+	// see which descriptor we are being asked for
+	if (rq->wValue.bytes[1] == USBDESCR_HID_REPORT) {
+		static uchar reportDescriptor[sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS];
+		
+		for (uint8_t i=0; i<NUMBER_OF_STICKS; i++) {
+			memcpy_P(reportDescriptor + (i*sizeof(usbHidReportDescriptorTemplate)), usbHidReportDescriptorTemplate, sizeof(usbHidReportDescriptorTemplate));
+			reportDescriptor[9 + i*sizeof(usbHidReportDescriptorTemplate)] = i+1; // set report id
+		}
+		
+		usbMsgPtr = (uchar*)&reportDescriptor;
+		
+		return sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS;
+	} else if (rq->wValue.bytes[1] == USBDESCR_HID) {
+		static uchar hidDescriptor[9] = {
+			9,          /* sizeof(usbDescrHID): length of descriptor in bytes */
+			USBDESCR_HID,   /* descriptor type: HID */
+			0x01, 0x01, /* BCD representation of HID version */
+			0x00,       /* target country code */
+			0x01,       /* number of HID Report (or other HID class) Descriptor infos to follow */
+			0x22,       /* descriptor type: report */
+			//			0x2c, 0x01,  /* total length of report descriptor */
+			//			sizeof(usbHidReportDescriptorTemplate)*NUMBER_OF_STICKS, 0,
+			0x00, 0x00 /* total length of report descriptor */
+		};
+		hidDescriptor[7] = reportDescriptorLength.bytes[1];
+		hidDescriptor[8] = reportDescriptorLength.bytes[0];
+
+		usbMsgPtr = (uchar*)&hidDescriptor;
+		return sizeof(hidDescriptor);
+	} else if (rq->wValue.bytes[1] == USBDESCR_CONFIG) {
+		static uchar configDescriptor[] = {
+		    9,          /* sizeof(usbDescriptorConfiguration): length of descriptor in bytes */
+			USBDESCR_CONFIG,    /* descriptor type */
+			18 + 7 * USB_CFG_HAVE_INTRIN_ENDPOINT + 7 * USB_CFG_HAVE_INTRIN_ENDPOINT3 +
+			9 /* for HID descriptor */, 0,
+			/* total length of data returned (including inlined descriptors) */
+			1,          /* number of interfaces in this configuration */
+			1,          /* index of this configuration */
+			0,          /* configuration name string index */
+			(1 << 7) | USBATTR_SELFPOWER,       /* attributes */
+			USB_CFG_MAX_BUS_POWER/2,            /* max USB current in 2mA units */
+			/* interface descriptor follows inline: */
+			9,          /* sizeof(usbDescrInterface): length of descriptor in bytes */
+			USBDESCR_INTERFACE, /* descriptor type */
+			0,          /* index of this interface */
+			0,          /* alternate setting for this interface */
+			1, /* endpoints excl 0: number of endpoint descriptors to follow */
+			USB_CFG_INTERFACE_CLASS,
+			USB_CFG_INTERFACE_SUBCLASS,
+			USB_CFG_INTERFACE_PROTOCOL,
+			0,          /* string index for interface */
+			/* HID descriptor */
+			9,          /* sizeof(usbDescrHID): length of descriptor in bytes */
+			USBDESCR_HID,   /* descriptor type: HID */
+			0x01, 0x01, /* BCD representation of HID version */
+			0x00,       /* target country code */
+			0x01,       /* number of HID Report (or other HID class) Descriptor infos to follow */
+			0x22,       /* descriptor type: report */
+			0x00, 0x00, /* total length of report descriptor */
+
+#if USB_CFG_HAVE_INTRIN_ENDPOINT    /* endpoint descriptor for endpoint 1 */
+			7,          /* sizeof(usbDescrEndpoint) */
+			USBDESCR_ENDPOINT,  /* descriptor type = endpoint */
+			(char)0x81, /* IN endpoint number 1 */
+			0x03,       /* attrib: Interrupt endpoint */
+			8, 0,       /* maximum packet size */
+			USB_CFG_INTR_POLL_INTERVAL, /* in ms */
+#endif
+		};
+		//		configDescriptor[25] = 0x96;
+		configDescriptor[25] = reportDescriptorLength.bytes[0];
+		configDescriptor[26] = reportDescriptorLength.bytes[1];
+
+		
+		usbMsgPtr = (uchar*)&configDescriptor;
+		return sizeof(configDescriptor);
 	}
-	
-	usbMsgPtr = (uchar*)&reportDescriptor;
-	
-	return sizeof(usbHidReportDescriptorTemplate) * NUMBER_OF_STICKS;
 }
 
-uchar	usbFunctionSetup(uchar data[8])
+usbMsgLen_t	usbFunctionSetup(uchar data[8])
 {
 usbRequest_t    *rq = (void *)data;
 
