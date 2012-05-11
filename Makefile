@@ -13,7 +13,7 @@ UISP = uisp -dprog=avr910 -dserial=$(SERIAL) -dpart=auto
 # to a Keyspan USB to serial converter to a Mac running Mac OS X.
 # Choose your favorite programmer and interface.
 
-COMPILE = avr-gcc -std=c99 -Wall -Os -Iusbdrv -I. -mmcu=atmega48
+COMPILE = avr-gcc -std=c99 -Wall -Os -Iusbdrv -I. -mmcu=atmega168
 
 OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o lcd-routines.o encoder.o main.o
 
@@ -22,7 +22,7 @@ all:	main.hex
 
 
 flash: all
-	sudo avrdude -p m48 -P usb -c avrispmkII -B 22 -U flash:w:main.hex:a
+	sudo avrdude -p m168 -P usb -c avrispmkII -B 22 -U flash:w:main.hex:a
 
 
 .c.o:
