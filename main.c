@@ -28,7 +28,7 @@ static uchar    reportBuffers[NUMBER_OF_STICKS][8];
 static uchar    reportBufferSizes[NUMBER_OF_STICKS];
 static uchar    reportBufferChanged[NUMBER_OF_STICKS];
 
-static uchar reportBufferOffset = 0;
+static uchar selectedPage = 0;
 
 // report IDs start at 1
 #define REPORT_ID_MAX NUMBER_OF_STICKS
@@ -193,18 +193,141 @@ void axisDelta(uchar reportId, uchar axisNumber, char delta) {
 	reportBufferChanged[reportId-1] = 1;
 }
 
+void selectPage(uchar page) {
+	selectedPage = page;
+	if (page == 1) {
+		lcd_select(2);
+		lcd_clear();
+		lcd_string("Lighting Panel");
+		
+		lcd_select(1);
+		lcd_clear();
+		lcd_string("CONS ");
+		lcd_string("ENG  ");
+		lcd_string("FLTI ");
+		lcd_string("FLOOD");
+		lcd_setcursor(0,2);
+		lcd_string("FORM ");
+		lcd_string("NOSE ");
+		lcd_string("POS  ");
+		lcd_string("SIGNL");
+	} else if (page == 2) {
+		lcd_select(2);
+		lcd_clear();
+		lcd_string("AAP");
+		lcd_setcursor(0,2);
+		lcd_string("Electrical Panel");
+		
+		lcd_select(1);
+		lcd_clear();
+		lcd_string("CDU  ");
+		lcd_string("EGI  ");
+		lcd_string("EmFld");
+		lcd_string(" BAT ");
+		lcd_setcursor(0,2);
+		lcd_string("GenL ");
+		lcd_string("GenR ");
+		lcd_string("GenA ");
+		lcd_string("Inv  ");
+	} else if (page == 3) {
+		lcd_select(2);
+		lcd_clear();
+		lcd_string("Fuel System");
+		
+		lcd_select(1);
+		lcd_clear();
+		lcd_string("  BOO");
+		lcd_string("ST   ");
+		lcd_string("TkGt ");
+		lcd_string("RcvrL");
+		lcd_setcursor(0,2);
+		lcd_string("   PU");
+		lcd_string("MPS  ");
+		lcd_string("     ");
+		lcd_string("     ");
+	} else if (page == 4) {
+		lcd_select(2);
+		lcd_clear();
+		lcd_string("AHCP");
+		
+		lcd_select(1);
+		lcd_clear();
+		lcd_string("MArm ");
+		lcd_string("GUN  ");
+		lcd_string("Laser");
+		lcd_string(" TGP ");
+		lcd_setcursor(0,2);
+		lcd_string("CICU ");
+		lcd_string("JTRS ");
+		lcd_string("IFFCC");
+		lcd_string("     ");
+	} else if (page == 5) {
+		lcd_select(2);
+		lcd_clear();
+		lcd_string("Intercom");
+		
+		lcd_select(1);
+		lcd_clear();
+		lcd_string("FM   ");
+		lcd_string("HF   ");
+		lcd_string("INT  ");
+		lcd_string("VHF  ");
+		lcd_setcursor(0,2);
+		lcd_string("TCN  ");
+		lcd_string("ILS  ");
+		lcd_string("AIM  ");
+		lcd_string("Vol  ");
+	} else if (page == 6) {
+		lcd_select(2);
+		lcd_clear();
+		lcd_string("TACAN and ILS");
+		
+		lcd_select(1);
+		lcd_clear();
+		lcd_string("TCN C");
+		lcd_string("hanne");
+		lcd_string("l    ");
+		lcd_string("     ");
+		lcd_setcursor(0,2);
+		lcd_string("ILS F");
+		lcd_string("reque");
+		lcd_string("ncy  ");
+		lcd_string("     ");
+	} else {
+		lcd_select(2);
+		lcd_clear();
+		lcd_string("Page "); lcd_num(page);
+		
+		lcd_select(1);
+		lcd_clear();
+	}
+}
+void nextPage() {
+	selectedPage++;
+	if (selectedPage > NUMBER_OF_STICKS) selectedPage = 1;
+	selectPage(selectedPage);
+}
+void previousPage() {
+	selectedPage--;
+	if (selectedPage == 0) selectedPage = NUMBER_OF_STICKS;
+	selectPage(selectedPage);
+}
+
 void handleInput(uchar events[9]) {
 	uchar event;
 
 	/* set buttons 1 to 24 to react to dials 1 through 8 */
 	for (uchar i=0; i<8; i++) {
 		event = events[i];
-		if (event & ECEV_BUTTON_DOWN) buttonDown(1,1+(i*3));
-		if (event & ECEV_BUTTON_UP) buttonUp(1,1+(i*3));
-		if (event & ECEV_LEFT) buttonTap(1,2+(i*3));
-		if (event & ECEV_RIGHT) buttonTap(1,3+(i*3));	
+		if (event & ECEV_BUTTON_DOWN) buttonDown(selectedPage,1+(i*3));
+		if (event & ECEV_BUTTON_UP) buttonUp(selectedPage,1+(i*3));
+		if (event & ECEV_LEFT) buttonTap(selectedPage,2+(i*3));
+		if (event & ECEV_RIGHT) buttonTap(selectedPage,3+(i*3));	
 	}
 
+	if (events[8] & ECEV_LEFT) previousPage();
+	if (events[8] & ECEV_RIGHT) nextPage();
+	if (events[8] & ECEV_BUTTON_UP) selectPage(1);
 
 }
 
@@ -242,6 +365,8 @@ int main(void)
 	lcd_init();
 	lcd_clear();
 
+	selectPage(1);
+	
     sei();
 
 	static uint8_t events[9] =    {0,0,0,0,0,0,0,0,0};
